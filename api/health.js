@@ -31,8 +31,8 @@ export default function handler(req, res) {
       availableTranscribers.push('google');
     }
     
-    if (process.env.ANTHROPIC_API_KEY) {
-      availableTranscribers.push('grok');
+    if (process.env.ASSEMBLYAI_API_KEY) {
+      availableTranscribers.push('assemblyai');
     }
 
     res.status(200).json({
