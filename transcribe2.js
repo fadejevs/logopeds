@@ -1,7 +1,7 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -29,8 +29,8 @@ export default async function handler(req, res) {
     const results = [];
 
     // Only Whisper and AssemblyAI enabled here to keep function lean
-    const { WhisperTranscriber } = await import('./transcribers/whisper.js');
-    const AssemblyAITranscriber = (await import('./transcribers/assemblyai.js')).default;
+    const { WhisperTranscriber } = require('./transcribers/whisper.js');
+    const AssemblyAITranscriber = require('./transcribers/assemblyai.js');
 
     for (const modelId of models) {
       const start = Date.now();
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
           const buffer = fs.readFileSync(audioPath);
           transcript = await transcriber.transcribe(buffer);
         } else if (modelId === 'speechmatics') {
-          const { SpeechmaticsTranscriber } = await import('./transcribers/speechmatics.js');
+          const { SpeechmaticsTranscriber } = require('./transcribers/speechmatics.js');
           const transcriber = new SpeechmaticsTranscriber();
           transcript = await transcriber.transcribe(audioPath);
         } else {
