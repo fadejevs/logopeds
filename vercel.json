@@ -28,10 +28,5 @@
     "ANTHROPIC_API_KEY": "@anthropic_api_key",
     "GOOGLE_APPLICATION_CREDENTIALS": "@google_credentials",
     "GOOGLE_CLOUD_PROJECT_ID": "@google_cloud_project_id"
-  },
-  "functions": {
-    "api/transcribe.js": {
-      "maxDuration": 300
-    }
   }
 }
