@@ -4,7 +4,8 @@ import path from 'path';
 // Import transcription services
 import { SpeechmaticsTranscriber } from '../transcribers/speechmatics.js';
 import { WhisperTranscriber } from '../transcribers/whisper.js';
-import { GrokTranscriber } from '../transcribers/grok.js';
+import { GoogleSTTTranscriber, GoogleCloudSTTTranscriber } from '../transcribers/google.js';
+import { GrokTranscriber } from '../transcribers/anthropic.js';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -68,7 +69,18 @@ export default async function handler(req, res) {
             break;
 
           case 'whisper':
+            if (!process.env.OPENAI_API_KEY) {
+              throw new Error('OpenAI API key not configured');
+            }
             transcriber = new WhisperTranscriber();
+            transcript = await transcriber.transcribe(audioPath);
+            break;
+
+          case 'google':
+            if (!process.env.GOOGLE_CLOUD_API_KEY) {
+              throw new Error('Google Cloud API key not configured');
+            }
+            transcriber = new GoogleCloudSTTTranscriber();
             transcript = await transcriber.transcribe(audioPath);
             break;
 

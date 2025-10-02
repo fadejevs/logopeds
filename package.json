@@ -9,7 +9,8 @@
   "dependencies": {
     "formidable": "^3.5.1",
     "@anthropic-ai/sdk": "^0.27.3",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "form-data": "^4.0.0"
   },
   "devDependencies": {
     "vercel": "^32.0.0"

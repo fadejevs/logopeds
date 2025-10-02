@@ -23,8 +23,13 @@ export default function handler(req, res) {
       availableTranscribers.push('speechmatics');
     }
     
-    // Whisper is always available (local)
-    availableTranscribers.push('whisper');
+    if (process.env.OPENAI_API_KEY) {
+      availableTranscribers.push('whisper');
+    }
+    
+    if (process.env.GOOGLE_CLOUD_API_KEY) {
+      availableTranscribers.push('google');
+    }
     
     if (process.env.ANTHROPIC_API_KEY) {
       availableTranscribers.push('grok');
