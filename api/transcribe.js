@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import formidable from 'formidable';
 
 // Import transcription services
 import { SpeechmaticsTranscriber } from '../transcribers/speechmatics.js';
@@ -8,11 +7,7 @@ import { WhisperTranscriber } from '../transcribers/whisper.js';
 import { GoogleSTTTranscriber, GoogleCloudSTTTranscriber } from '../transcribers/google.js';
 import AssemblyAITranscriber from '../transcribers/assemblyai.js';
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Use default body parser; this function expects JSON (filename, models)
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -30,41 +25,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    let filename = '';
-    let models = [];
-    let audioPath = '';
-
-    // If multipart form-data (production path): parse file and models
-    if (req.headers['content-type']?.includes('multipart/form-data')) {
-      const uploadDir = path.join('/tmp', 'audio_clips');
-      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-      const form = formidable({
-        uploadDir,
-        keepExtensions: true,
-        maxFileSize: 100 * 1024 * 1024,
-        filter: ({ mimetype }) => !!mimetype && mimetype.startsWith('audio/'),
-      });
-
-      const [fields, files] = await form.parse(req);
-      models = JSON.parse(Array.isArray(fields.models) ? fields.models[0] : fields.models || '[]');
-      const file = Array.isArray(files.file) ? files.file[0] : files.file;
-      if (!file) {
-        return res.status(400).json({ error: 'No audio file provided' });
-      }
-      const ext = path.extname(file.originalFilename || 'audio');
-      const base = path.basename(file.originalFilename || 'audio', ext);
-      const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-      filename = `${ts}_${base}${ext}`;
-      audioPath = path.join(uploadDir, filename);
-      fs.renameSync(file.filepath, audioPath);
-    } else {
-      // JSON body (local Flask-compatible path)
-      const body = req.body || {};
-      filename = body.filename;
-      models = body.models || [];
-      audioPath = path.join('/tmp', 'audio_clips', filename);
-    }
+    const body = req.body || {};
+    const filename = body.filename;
+    const models = body.models || [];
+    const audioPath = path.join('/tmp', 'audio_clips', filename);
 
     if (!filename || !models || !Array.isArray(models)) {
       console.error('Invalid request body:', { filename, models });
