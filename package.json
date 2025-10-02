@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Latvian Audio Transcription System",
   "scripts": {
-    "build": "cd frontend && npm run build",
-    "dev": "cd frontend && npm run dev"
+    "build": "echo 'Static site - no build needed'",
+    "dev": "echo 'Static site - no dev server needed'"
   },
   "dependencies": {
     "formidable": "^3.5.1",
