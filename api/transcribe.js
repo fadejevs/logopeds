@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const FormidableLib = require('formidable');
 
 // Import transcription services
 const { SpeechmaticsTranscriber } = require('../transcribers/speechmatics.js');
@@ -7,7 +8,12 @@ const { WhisperTranscriber } = require('../transcribers/whisper.js');
 const { GoogleSTTTranscriber, GoogleCloudSTTTranscriber } = require('../transcribers/google.js');
 const AssemblyAITranscriber = require('../transcribers/assemblyai.js');
 
-// Use default body parser; this function expects JSON (filename, models)
+// Disable default body parser to allow multipart in single-step production flow
+module.exports.config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 module.exports = async function handler(req, res) {
   // Set CORS headers
@@ -25,10 +31,68 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const body = req.body || {};
-    const filename = body.filename;
-    const models = body.models || [];
-    const audioPath = path.join('/tmp', 'audio_clips', filename);
+    const contentType = req.headers['content-type'] || '';
+
+    let filename = null;
+    let models = [];
+    let audioPath = null;
+
+    if (contentType.startsWith('multipart/form-data')) {
+      // Single-step production flow: parse file + models
+      const uploadDir = path.join('/tmp', 'audio_clips');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const formidableFn = FormidableLib.formidable || FormidableLib;
+      const IncomingForm = FormidableLib.IncomingForm;
+      const formOptions = {
+        uploadDir,
+        keepExtensions: true,
+        maxFileSize: 100 * 1024 * 1024,
+      };
+      const form = typeof formidableFn === 'function' 
+        ? formidableFn(formOptions) 
+        : new IncomingForm(formOptions);
+
+      const [fields, files] = await new Promise((resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+          if (err) return reject(err);
+          resolve([fields, files]);
+        });
+      });
+
+      // Extract models
+      const rawModels = Array.isArray(fields.models) ? fields.models[0] : fields.models;
+      if (rawModels) {
+        try { models = JSON.parse(rawModels); } catch (_) { models = String(rawModels).split(',').map(s => s.trim()).filter(Boolean); }
+      }
+
+      // Extract file if present; otherwise use provided filename
+      const fileObj = Array.isArray(files.file) ? files.file[0] : files.file;
+      if (fileObj) {
+        const ext = path.extname(fileObj.originalFilename || fileObj.newFilename || 'audio');
+        const baseName = path.basename(fileObj.originalFilename || 'audio', ext);
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        filename = `${ts}_${baseName}${ext}`;
+        const newPath = path.join(uploadDir, filename);
+        fs.renameSync(fileObj.filepath, newPath);
+        audioPath = newPath;
+      } else {
+        const providedFilename = Array.isArray(fields.filename) ? fields.filename[0] : fields.filename;
+        if (!providedFilename) {
+          return res.status(400).json({ error: 'No audio file provided' });
+        }
+        filename = providedFilename;
+        audioPath = path.join(uploadDir, filename);
+      }
+    } else {
+      // Two-step local flow: JSON body { filename, models }
+      const body = req.body || {};
+      filename = body.filename;
+      models = body.models || [];
+      audioPath = path.join('/tmp', 'audio_clips', filename);
+    }
 
     if (!filename || !models || !Array.isArray(models)) {
       console.error('Invalid request body:', { filename, models });
