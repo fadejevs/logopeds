@@ -1,15 +1,15 @@
-import formidable from 'formidable';
-import fs from 'fs';
-import path from 'path';
+const formidable = require('formidable');
+const fs = require('fs');
+const path = require('path');
 
 // Configure Next.js API route
-export const config = {
+module.exports.config = {
   api: {
     bodyParser: false, // Disable body parsing, we'll handle it manually
   },
 };
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -47,7 +47,12 @@ export default async function handler(req, res) {
     });
 
     console.log('Parsing form data...');
-    const [fields, files] = await form.parse(req);
+    const [fields, files] = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        resolve([fields, files]);
+      });
+    });
     console.log('Form parsed successfully');
     
     const uploadedFiles = [];
