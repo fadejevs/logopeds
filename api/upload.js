@@ -1,4 +1,4 @@
-const formidable = require('formidable');
+const FormidableLib = require('formidable');
 const fs = require('fs');
 const path = require('path');
 
@@ -34,8 +34,10 @@ module.exports = async function handler(req, res) {
       console.log('Created upload directory:', uploadDir);
     }
 
-    // Parse the form data
-    const form = formidable({
+    // Parse the form data (compat for different formidable export shapes)
+    const formidableFn = FormidableLib.formidable || FormidableLib;
+    const IncomingForm = FormidableLib.IncomingForm;
+    const formOptions = {
       uploadDir: uploadDir,
       keepExtensions: true,
       maxFileSize: 100 * 1024 * 1024, // 100MB
@@ -44,7 +46,10 @@ module.exports = async function handler(req, res) {
         // Only allow audio files
         return mimetype && mimetype.startsWith('audio/');
       }
-    });
+    };
+    const form = typeof formidableFn === 'function' 
+      ? formidableFn(formOptions) 
+      : new IncomingForm(formOptions);
 
     console.log('Parsing form data...');
     const [fields, files] = await new Promise((resolve, reject) => {
