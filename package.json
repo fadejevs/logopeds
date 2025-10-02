@@ -4,14 +4,12 @@
   "description": "Latvian Audio Transcription System",
   "scripts": {
     "build": "cd frontend && npm run build",
-    "dev": "cd frontend && npm run dev",
-    "deploy": "vercel --prod"
+    "dev": "cd frontend && npm run dev"
   },
   "dependencies": {
     "formidable": "^3.5.1",
-    "openai-whisper": "^20231117",
-    "anthropic": "^0.3.0",
-    "requests": "^2.31.0"
+    "@anthropic-ai/sdk": "^0.27.3",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "vercel": "^32.0.0"
