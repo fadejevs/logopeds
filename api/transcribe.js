@@ -23,26 +23,41 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('Transcribe request received:', req.body);
     const { filename, models } = req.body;
 
     if (!filename || !models || !Array.isArray(models)) {
+      console.error('Invalid request body:', { filename, models });
       return res.status(400).json({ 
         error: 'Missing required fields: filename and models array' 
       });
     }
 
-    const audioPath = path.join(process.cwd(), 'audio_clips', filename);
+    // Use /tmp for Vercel (where upload.js stores files)
+    const audioPath = path.join('/tmp', 'audio_clips', filename);
+    console.log('Looking for audio file at:', audioPath);
     
     if (!fs.existsSync(audioPath)) {
+      console.error('Audio file not found at:', audioPath);
+      // List files in directory for debugging
+      const dir = path.join('/tmp', 'audio_clips');
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir);
+        console.log('Files in /tmp/audio_clips:', files);
+      } else {
+        console.log('Directory /tmp/audio_clips does not exist');
+      }
       return res.status(404).json({ 
-        error: 'Audio file not found' 
+        error: 'Audio file not found',
+        path: audioPath
       });
     }
 
-    // Create results directory
-    const resultsDir = path.join(process.cwd(), 'transcriptions');
+    // Create results directory in /tmp
+    const resultsDir = path.join('/tmp', 'transcriptions');
     if (!fs.existsSync(resultsDir)) {
       fs.mkdirSync(resultsDir, { recursive: true });
+      console.log('Created results directory:', resultsDir);
     }
 
     const results = [];
@@ -159,9 +174,11 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Transcription error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       error: 'Transcription failed',
-      message: error.message 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }

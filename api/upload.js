@@ -85,10 +85,19 @@ export default async function handler(req, res) {
 
     console.log('Upload completed, files:', uploadedFiles.length);
     
-    res.status(200).json({
-      message: 'Files uploaded successfully',
-      files: uploadedFiles
-    });
+    // Return format compatible with Flask backend
+    if (uploadedFiles.length === 1) {
+      res.status(200).json({
+        message: 'File uploaded successfully',
+        filename: uploadedFiles[0].filename,
+        file_path: path.join('/tmp/audio_clips', uploadedFiles[0].filename)
+      });
+    } else {
+      res.status(200).json({
+        message: 'Files uploaded successfully',
+        files: uploadedFiles
+      });
+    }
 
   } catch (error) {
     console.error('Upload error:', error);
