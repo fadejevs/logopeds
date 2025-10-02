@@ -126,6 +126,22 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
     loadFiles();
     // Load files with results from localStorage
     setFilesWithResults(getFilesWithResults());
+    // Fallback: if server returns no files (e.g., Vercel ephemeral FS), read last result from localStorage
+    try {
+      const cached = localStorage.getItem('lastTranscription');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (!files || files.length === 0) {
+          setFiles([
+            {
+              filename: parsed.filename || 'recent-transcription',
+              size: 0,
+              upload_time: new Date(parsed.timestamp || Date.now()).toISOString(),
+            },
+          ]);
+        }
+      }
+    } catch {}
   }, []);
 
   const loadFiles = async () => {

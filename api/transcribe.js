@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const FormidableLib = require('formidable');
+const { kv } = require('@vercel/kv');
 
 // Import transcription services
 const { SpeechmaticsTranscriber } = require('../transcribers/speechmatics.js');
@@ -232,8 +233,22 @@ module.exports = async function handler(req, res) {
     
     fs.writeFileSync(summaryFile, csvHeader + csvRows);
 
+    // Persist minimal metadata and results in KV for live viewing
+    try {
+      const record = {
+        filename,
+        created_at: Date.now(),
+        results,
+      };
+      await kv.set(`file:${filename}`, record, { ex: 60 * 60 * 24 * 3 }); // 3 days
+      await kv.zadd('files', { score: Date.now(), member: filename });
+    } catch (e) {
+      console.warn('KV persist failed:', e.message);
+    }
+
     res.status(200).json({
       message: 'Transcription completed',
+      filename,
       results: results,
       summary_file: `transcription_${timestamp}.csv`
     });

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { kv } = require('@vercel/kv');
 
 module.exports = function handler(req, res) {
   // Set CORS headers
@@ -17,29 +18,28 @@ module.exports = function handler(req, res) {
   }
 
   try {
+    // Prefer KV (works on Vercel) and fall back to local fs
+    try {
+      const names = await kv.zrange('files', 0, -1, { rev: true });
+      const files = [];
+      for (const filename of names) {
+        const rec = await kv.get(`file:${filename}`);
+        if (rec) {
+          files.push({
+            filename: rec.filename,
+            size: 0,
+            upload_time: new Date(rec.created_at).toISOString(),
+          });
+        }
+      }
+      return res.status(200).json({ files });
+    } catch (_) {}
+
     const audioDir = path.join(process.cwd(), 'audio_clips');
-    
     if (!fs.existsSync(audioDir)) {
       return res.status(200).json({ files: [] });
     }
-
-    const files = fs.readdirSync(audioDir)
-      .filter(file => {
-        const ext = path.extname(file).toLowerCase();
-        return ['.wav', '.mp3', '.m4a', '.flac', '.ogg'].includes(ext);
-      })
-      .map(file => {
-        const filePath = path.join(audioDir, file);
-        const stats = fs.statSync(filePath);
-        
-        return {
-          filename: file,
-          size: stats.size,
-          upload_time: stats.birthtime.toISOString()
-        };
-      })
-      .sort((a, b) => new Date(b.upload_time) - new Date(a.upload_time)); // Newest first
-
+    const files = fs.readdirSync(audioDir).map(file => ({ filename: file, size: 0, upload_time: new Date().toISOString() }));
     res.status(200).json({ files });
 
   } catch (error) {

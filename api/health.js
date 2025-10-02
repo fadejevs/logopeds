@@ -38,6 +38,7 @@ module.exports = function handler(req, res) {
     res.status(200).json({
       status: 'healthy',
       available_transcribers: availableTranscribers,
+      storage: process.env.KV_REST_API_URL ? 'kv' : 'tmp',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
