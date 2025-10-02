@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ],
+  "env": {
+    "SPEECHMATICS_API_KEY": "@speechmatics_api_key",
+    "ANTHROPIC_API_KEY": "@anthropic_api_key",
+    "GOOGLE_APPLICATION_CREDENTIALS": "@google_credentials",
+    "GOOGLE_CLOUD_PROJECT_ID": "@google_cloud_project_id"
+  },
+  "functions": {
+    "api/transcribe.js": {
+      "maxDuration": 300
+    }
+  }
+}
