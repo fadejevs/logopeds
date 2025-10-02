@@ -1,8 +1,4 @@
 {
-  "version": 2,
-  "routes": [
-    { "src": "/api/transcribe", "dest": "/transcribe2.js" },
-    { "src": "/api/(.*)", "dest": "/api/$1" }
-  ]
+  "version": 2
 }
 

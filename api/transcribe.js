@@ -1,15 +1,15 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
 // Import transcription services
-import { SpeechmaticsTranscriber } from '../transcribers/speechmatics.js';
-import { WhisperTranscriber } from '../transcribers/whisper.js';
-import { GoogleSTTTranscriber, GoogleCloudSTTTranscriber } from '../transcribers/google.js';
-import AssemblyAITranscriber from '../transcribers/assemblyai.js';
+const { SpeechmaticsTranscriber } = require('../transcribers/speechmatics.js');
+const { WhisperTranscriber } = require('../transcribers/whisper.js');
+const { GoogleSTTTranscriber, GoogleCloudSTTTranscriber } = require('../transcribers/google.js');
+const AssemblyAITranscriber = require('../transcribers/assemblyai.js');
 
 // Use default body parser; this function expects JSON (filename, models)
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
