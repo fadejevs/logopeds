@@ -17,7 +17,7 @@ SPEECHMATICS_API_KEY = os.getenv("SPEECHMATICS_API_KEY")
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 GOOGLE_CLOUD_PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
 
 # Model configurations
 MODELS = {
@@ -39,11 +39,11 @@ MODELS = {
         "model_size": "medium",
         "requires_api_key": False
     },
-    "grok": {
-        "name": "Grok (Anthropic)",
+    "assemblyai": {
+        "name": "AssemblyAI",
         "language": "lv",
         "requires_api_key": True,
-        "api_key": ANTHROPIC_API_KEY
+        "api_key": ASSEMBLYAI_API_KEY
     }
 }
 

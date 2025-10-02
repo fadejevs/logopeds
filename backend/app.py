@@ -24,7 +24,7 @@ from transcribers import (
     SpeechmaticsTranscriber,
     GoogleTranscriber,
     WhisperTranscriber,
-    GrokTranscriber,
+    AssemblyAITranscriber,
     TranscriptionError
 )
 
@@ -76,10 +76,10 @@ def initialize_transcribers():
         logger.warning(f"✗ Whisper: {e}")
     
     try:
-        transcribers['grok'] = GrokTranscriber()
-        logger.info("✓ Grok transcriber initialized")
+        transcribers['assemblyai'] = AssemblyAITranscriber()
+        logger.info("✓ AssemblyAI transcriber initialized")
     except Exception as e:
-        logger.warning(f"✗ Grok: {e}")
+        logger.warning(f"✗ AssemblyAI: {e}")
     
     return transcribers
 

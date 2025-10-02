@@ -4,7 +4,7 @@ from .base import BaseTranscriber, TranscriptionError
 from .speechmatics import SpeechmaticsTranscriber
 from .google import GoogleTranscriber
 from .whisper import WhisperTranscriber
-from .grok import GrokTranscriber
+from .assemblyai import AssemblyAITranscriber
 
 __all__ = [
     "BaseTranscriber",
@@ -12,5 +12,5 @@ __all__ = [
     "SpeechmaticsTranscriber",
     "GoogleTranscriber",
     "WhisperTranscriber",
-    "GrokTranscriber"
+    "AssemblyAITranscriber"
 ]

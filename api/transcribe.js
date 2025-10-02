@@ -5,7 +5,7 @@ import path from 'path';
 import { SpeechmaticsTranscriber } from '../transcribers/speechmatics.js';
 import { WhisperTranscriber } from '../transcribers/whisper.js';
 import { GoogleSTTTranscriber, GoogleCloudSTTTranscriber } from '../transcribers/google.js';
-import { GrokTranscriber } from '../transcribers/anthropic.js';
+import AssemblyAITranscriber from '../transcribers/assemblyai.js';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -84,12 +84,13 @@ export default async function handler(req, res) {
             transcript = await transcriber.transcribe(audioPath);
             break;
 
-          case 'grok':
-            if (!process.env.ANTHROPIC_API_KEY) {
-              throw new Error('Anthropic API key not configured');
+          case 'assemblyai':
+            if (!process.env.ASSEMBLYAI_API_KEY) {
+              throw new Error('AssemblyAI API key not configured');
             }
-            transcriber = new GrokTranscriber();
-            transcript = await transcriber.transcribe(audioPath);
+            transcriber = new AssemblyAITranscriber(process.env.ASSEMBLYAI_API_KEY);
+            const fileBuffer = fs.readFileSync(audioPath);
+            transcript = await transcriber.transcribe(fileBuffer);
             break;
 
           default:
