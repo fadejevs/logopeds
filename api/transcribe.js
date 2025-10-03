@@ -111,6 +111,14 @@ module.exports = async function handler(req, res) {
       ASSEMBLYAI_API_KEY: !!process.env.ASSEMBLYAI_API_KEY
     });
     
+    // Log first few characters of API keys for debugging (safely)
+    console.log('API Key prefixes:', {
+      SPEECHMATICS_API_KEY: process.env.SPEECHMATICS_API_KEY ? process.env.SPEECHMATICS_API_KEY.substring(0, 8) + '...' : 'NOT_SET',
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 8) + '...' : 'NOT_SET',
+      GOOGLE_CLOUD_API_KEY: process.env.GOOGLE_CLOUD_API_KEY ? process.env.GOOGLE_CLOUD_API_KEY.substring(0, 8) + '...' : 'NOT_SET',
+      ASSEMBLYAI_API_KEY: process.env.ASSEMBLYAI_API_KEY ? process.env.ASSEMBLYAI_API_KEY.substring(0, 8) + '...' : 'NOT_SET'
+    });
+    
     if (!fs.existsSync(audioPath)) {
       console.error('Audio file not found at:', audioPath);
       // List files in directory for debugging
