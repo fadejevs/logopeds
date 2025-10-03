@@ -203,11 +203,25 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
   const loadFileResults = async (filename: string) => {
     setLoading(true);
     try {
+      // First try to get results from localStorage
+      const localStorageKey = `transcription_results_${filename}`;
+      const storedResults = localStorage.getItem(localStorageKey);
+      
+      if (storedResults) {
+        const parsedResults = JSON.parse(storedResults);
+        setFileResults(parsedResults);
+        addFileWithResults(filename);
+        setLoading(false);
+        return;
+      }
+      
+      // If not in localStorage, try API
       const response = await apiService.getResults(filename);
       setFileResults(response);
       
-      // Track that this file has results
+      // Store in localStorage for future use
       if (response && response.results && response.results.length > 0) {
+        localStorage.setItem(localStorageKey, JSON.stringify(response));
         addFileWithResults(filename);
       }
     } catch (error) {

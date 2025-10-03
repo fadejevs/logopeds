@@ -233,18 +233,8 @@ module.exports = async function handler(req, res) {
     
     fs.writeFileSync(summaryFile, csvHeader + csvRows);
 
-    // Persist minimal metadata and results in KV for live viewing
-    try {
-      const record = {
-        filename,
-        created_at: Date.now(),
-        results,
-      };
-      await kv.set(`file:${filename}`, record, { ex: 60 * 60 * 24 * 3 }); // 3 days
-      await kv.zadd('files', { score: Date.now(), member: filename });
-    } catch (e) {
-      console.warn('KV persist failed:', e.message);
-    }
+    // Results are already saved as individual files in /tmp/transcriptions
+    console.log('Transcription completed for:', filename, 'with', results.length, 'results');
 
     res.status(200).json({
       message: 'Transcription completed',
