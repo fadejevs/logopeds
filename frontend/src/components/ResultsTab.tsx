@@ -147,17 +147,56 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
     } catch {}
   }, []);
 
+  // Refresh when Upload tab signals completion (same tab navigation)
+  useEffect(() => {
+    const i = setInterval(() => {
+      try {
+        const stamp = sessionStorage.getItem('refreshResults');
+        if (stamp && stamp !== (window as any)._lastRefreshResults) {
+          (window as any)._lastRefreshResults = stamp;
+          loadFiles();
+        }
+      } catch {}
+    }, 1500);
+    return () => clearInterval(i);
+  }, []);
+
+  const getLocalHistoryFiles = (): FileInfo[] => {
+    try {
+      const historyRaw = localStorage.getItem('transcriptionHistory');
+      const history = historyRaw ? JSON.parse(historyRaw) : [];
+      return (history || []).map((h: any, idx: number) => ({
+        filename: h.filename || `session-${idx + 1}`,
+        size: 0,
+        upload_time: new Date(h.timestamp || Date.now()).toISOString(),
+      }));
+    } catch {
+      return [];
+    }
+  };
+
+  const mergeUnique = (a: FileInfo[], b: FileInfo[]): FileInfo[] => {
+    const map = new Map<string, FileInfo>();
+    [...a, ...b].forEach((f) => { map.set(f.filename, f); });
+    // newest first
+    return Array.from(map.values()).sort((x, y) => new Date(y.upload_time).getTime() - new Date(x.upload_time).getTime());
+  };
+
   const loadFiles = async () => {
+    // Start with local session history so UI is never empty on live
+    const localFiles = getLocalHistoryFiles();
+    if (localFiles.length > 0) {
+      setFiles(localFiles);
+    }
     try {
       const response = await apiService.listFiles();
-      // Sort files by upload time (newest first)
-      const sortedFiles = (response.files || []).sort((a: FileInfo, b: FileInfo) => 
+      const serverFiles = (response.files || []).sort((a: FileInfo, b: FileInfo) =>
         new Date(b.upload_time).getTime() - new Date(a.upload_time).getTime()
       );
-      setFiles(sortedFiles);
+      setFiles((prev) => mergeUnique(prev.length ? prev : localFiles, serverFiles));
     } catch (error) {
+      // Keep local files if server listing fails
       console.error('Failed to load files:', error);
-      onShowSnackbar('Failed to load files', 'error');
     }
   };
 

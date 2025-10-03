@@ -132,6 +132,8 @@ const UploadTab: React.FC<UploadTabProps> = ({
         // keep last 10 items
         localStorage.setItem('transcriptionHistory', JSON.stringify(history.slice(0, 10)));
       } catch {}
+      // Inform Results tab to refresh (and pick up local history instantly)
+      try { sessionStorage.setItem('refreshResults', String(Date.now())); } catch {}
       onTranscriptionComplete();
       onShowSnackbar('Transcription completed successfully!', 'success');
       
