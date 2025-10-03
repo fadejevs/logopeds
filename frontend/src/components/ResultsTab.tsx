@@ -364,19 +364,6 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-          Transcription Results
-        </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Refresh />}
-          onClick={loadFiles}
-        >
-          Refresh
-        </Button>
-      </Box>
-
       <Grid container spacing={4}>
         {/* Files List */}
         <Grid item xs={12} md={5}>

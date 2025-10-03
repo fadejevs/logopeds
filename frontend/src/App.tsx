@@ -225,7 +225,7 @@ function App() {
               </Box>
               <Box>
                 <Typography variant="h6" component="div" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-                 Transkripcija
+                 Transkripcijas tests
                 </Typography>
               </Box>
             </Box>

@@ -55,7 +55,7 @@ const modelNames: { [key: string]: string } = {
 const modelDescriptions: { [key: string]: string } = {
   speechmatics: 'Commercial speech recognition API with enhanced Latvian support',
   google: 'Google Cloud\'s speech recognition service with latest models',
-  whisper: 'Open-source speech recognition model (runs locally)',
+  whisper: 'Open-source speech recognition model',
   assemblyai: 'High-accuracy speech recognition with excellent Latvian support',
 };
 

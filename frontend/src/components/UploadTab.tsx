@@ -44,7 +44,7 @@ const modelNames: { [key: string]: string } = {
 const modelDescriptions: { [key: string]: string } = {
   speechmatics: 'Commercial speech recognition API with enhanced Latvian support',
   google: 'Google Cloud\'s speech recognition service with latest models',
-  whisper: 'Open-source speech recognition model (runs locally)',
+  whisper: 'Open-source speech recognition model',
   assemblyai: 'High-accuracy speech recognition with excellent Latvian support',
 };
 
@@ -169,14 +169,6 @@ const UploadTab: React.FC<UploadTabProps> = ({
 
   return (
     <Box>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
-          Upload Your Audio
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Upload a Latvian audio file and select which transcription models you want to test
-        </Typography>
-      </Box>
 
       <Grid container spacing={3}>
         {/* Upload Section */}
