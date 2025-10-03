@@ -29,8 +29,26 @@ module.exports = async function handler(req, res) {
     const resultsDir = path.join('/tmp', 'transcriptions');
     const filePath = path.join(resultsDir, filename);
     
+    console.log('Download request for:', filename);
+    console.log('Looking in directory:', resultsDir);
+    console.log('Full file path:', filePath);
+    
+    if (!fs.existsSync(resultsDir)) {
+      console.log('Results directory does not exist');
+      return res.status(404).json({ error: 'Results directory not found' });
+    }
+    
+    // List all files in the directory for debugging
+    const allFiles = fs.readdirSync(resultsDir);
+    console.log('Available files in results directory:', allFiles);
+    
     if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found' });
+      console.log('Requested file not found:', filename);
+      return res.status(404).json({ 
+        error: 'File not found',
+        requested: filename,
+        available: allFiles
+      });
     }
 
     // Read the file content

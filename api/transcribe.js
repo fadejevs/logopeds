@@ -216,6 +216,8 @@ module.exports = async function handler(req, res) {
         const transcriptFile = path.join(resultsDir, `${filename}_${modelId}.txt`);
         const header = `# Transcription by ${modelId.toUpperCase()}\n# Parameters: ${getModelParameters(modelId)}\n# Generated: ${new Date().toISOString()}\n\n`;
         fs.writeFileSync(transcriptFile, header + transcript, 'utf-8');
+        console.log(`Saved transcript file: ${transcriptFile}`);
+        console.log(`File exists: ${fs.existsSync(transcriptFile)}`);
 
         results.push({
           model_id: modelId,
