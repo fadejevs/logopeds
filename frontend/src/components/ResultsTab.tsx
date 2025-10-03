@@ -58,10 +58,10 @@ interface FileResults {
 }
 
 const modelNames: { [key: string]: string } = {
-  speechmatics: 'Speechmatics',
-  google: 'Google Speech-to-Text',
-  whisper: 'OpenAI Whisper',
-  assemblyai: 'AssemblyAI',
+  speechmatics: 'Speechmatics Enhanced Latvian',
+  google: 'Google Speech-to-Text Default Latvian',
+  whisper: 'OpenAI Whisper-1 Latvian',
+  assemblyai: 'AssemblyAI Latvian',
 };
 
 const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscriptionComplete }) => {
@@ -314,10 +314,10 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
 
   const handleDownloadTranscript = async (filename: string, modelId: string) => {
     try {
-      const response = await apiService.downloadFile(`${filename}_${modelId}.txt`);
+      const transcriptContent = await apiService.downloadFile(`${filename}_${modelId}.txt`);
       
       // Create blob and download
-      const blob = new Blob([response], { type: 'text/plain' });
+      const blob = new Blob([transcriptContent], { type: 'text/plain; charset=utf-8' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

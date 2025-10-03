@@ -119,7 +119,7 @@ export const apiService = {
   // Download file
   async downloadFile(filename: string) {
     const response = await api.get(`/api/download/${filename}`, {
-      responseType: 'blob',
+      responseType: 'text',
     });
     return response.data;
   },

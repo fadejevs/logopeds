@@ -8,6 +8,22 @@ const { WhisperTranscriber } = require('../transcribers/whisper.js');
 const { GoogleSTTTranscriber, GoogleCloudSTTTranscriber } = require('../transcribers/google.js');
 const AssemblyAITranscriber = require('../transcribers/assemblyai.js');
 
+// Helper function to get model parameters
+function getModelParameters(modelId) {
+  switch (modelId) {
+    case 'speechmatics':
+      return 'Enhanced operating point, Latvian language';
+    case 'whisper':
+      return 'Whisper-1 model, Latvian language, text format';
+    case 'google':
+      return 'Google Cloud Speech-to-Text, Latvian language, default settings';
+    case 'assemblyai':
+      return 'AssemblyAI, Latvian language';
+    default:
+      return 'Unknown parameters';
+  }
+}
+
 // Disable default body parser to allow multipart in single-step production flow
 module.exports.config = {
   api: {
@@ -196,9 +212,10 @@ module.exports = async function handler(req, res) {
 
         const processingTime = (Date.now() - startTime) / 1000;
 
-        // Save transcript to file
+        // Save transcript to file with parameter details
         const transcriptFile = path.join(resultsDir, `${filename}_${modelId}.txt`);
-        fs.writeFileSync(transcriptFile, transcript, 'utf-8');
+        const header = `# Transcription by ${modelId.toUpperCase()}\n# Parameters: ${getModelParameters(modelId)}\n# Generated: ${new Date().toISOString()}\n\n`;
+        fs.writeFileSync(transcriptFile, header + transcript, 'utf-8');
 
         results.push({
           model_id: modelId,
