@@ -124,22 +124,25 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
 
   useEffect(() => {
     loadFiles();
-    // Load files with results from localStorage
     setFilesWithResults(getFilesWithResults());
-    // Fallback: if server returns no files (e.g., Vercel ephemeral FS), read last result from localStorage
+    // Always merge local session history into the list for live demo simplicity
     try {
-      const cached = localStorage.getItem('lastTranscription');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (!files || files.length === 0) {
-          setFiles([
-            {
-              filename: parsed.filename || 'recent-transcription',
-              size: 0,
-              upload_time: new Date(parsed.timestamp || Date.now()).toISOString(),
-            },
-          ]);
-        }
+      const historyRaw = localStorage.getItem('transcriptionHistory');
+      const history = historyRaw ? JSON.parse(historyRaw) : [];
+      if (history.length > 0) {
+        const localFiles = history.map((h: any, idx: number) => ({
+          filename: h.filename || `session-${idx + 1}`,
+          size: 0,
+          upload_time: new Date(h.timestamp || Date.now()).toISOString(),
+        }));
+        setFiles(prev => {
+          const existing = new Set(prev.map(f => f.filename));
+          const merged = [...prev];
+          for (const lf of localFiles) {
+            if (!existing.has(lf.filename)) merged.unshift(lf);
+          }
+          return merged;
+        });
       }
     } catch {}
   }, []);

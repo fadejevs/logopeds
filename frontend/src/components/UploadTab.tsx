@@ -118,12 +118,19 @@ const UploadTab: React.FC<UploadTabProps> = ({
       setTranscriptionResults(transcriptionResponse);
       // Persist latest results locally so Results tab can show them on Vercel (no shared FS)
       try {
-        const stored = {
+        const entry = {
           timestamp: Date.now(),
           filename: (transcriptionResponse as any).filename || uploadedFile.name,
           results: (transcriptionResponse as any).results || [],
         };
-        localStorage.setItem('lastTranscription', JSON.stringify(stored));
+        // last item convenience
+        localStorage.setItem('lastTranscription', JSON.stringify(entry));
+        // append to session history (per-browser)
+        const historyRaw = localStorage.getItem('transcriptionHistory');
+        const history = historyRaw ? JSON.parse(historyRaw) : [];
+        history.unshift(entry);
+        // keep last 10 items
+        localStorage.setItem('transcriptionHistory', JSON.stringify(history.slice(0, 10)));
       } catch {}
       onTranscriptionComplete();
       onShowSnackbar('Transcription completed successfully!', 'success');
