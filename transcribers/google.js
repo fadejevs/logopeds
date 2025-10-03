@@ -1,6 +1,6 @@
-import fs from 'fs';
+const fs = require('fs');
 
-export class GoogleSTTTranscriber {
+class GoogleSTTTranscriber {
   constructor() {
     this.name = 'Google Speech-to-Text';
     this.language = 'lv'; // Latvian
@@ -34,7 +34,7 @@ export class GoogleSTTTranscriber {
 }
 
 // Alternative implementation using Google Cloud Speech-to-Text API
-export class GoogleCloudSTTTranscriber {
+class GoogleCloudSTTTranscriber {
   constructor() {
     this.name = 'Google Speech-to-Text';
     this.language = 'lv';
@@ -88,3 +88,5 @@ export class GoogleCloudSTTTranscriber {
     }
   }
 }
+
+module.exports = { GoogleSTTTranscriber, GoogleCloudSTTTranscriber };

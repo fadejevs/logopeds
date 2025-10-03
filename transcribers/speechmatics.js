@@ -1,8 +1,8 @@
-import fetch from 'node-fetch';
-import fs from 'fs';
-import path from 'path';
+const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
 
-export class SpeechmaticsTranscriber {
+class SpeechmaticsTranscriber {
   constructor() {
     this.apiKey = process.env.SPEECHMATICS_API_KEY;
     this.baseUrl = 'https://asr.api.speechmatics.com/v2';
@@ -112,3 +112,5 @@ export class SpeechmaticsTranscriber {
     throw new Error(`Transcription timeout after ${timeout}ms`);
   }
 }
+
+module.exports = { SpeechmaticsTranscriber };

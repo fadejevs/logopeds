@@ -1,8 +1,8 @@
-import fs from 'fs';
-import FormData from 'form-data';
-import fetch from 'node-fetch';
+const fs = require('fs');
+const FormData = require('form-data');
+const fetch = require('node-fetch');
 
-export class WhisperTranscriber {
+class WhisperTranscriber {
   constructor() {
     this.name = 'OpenAI Whisper';
     this.language = 'lv'; // Latvian
@@ -52,7 +52,7 @@ export class WhisperTranscriber {
 }
 
 // Alternative local implementation (for development)
-export class LocalWhisperTranscriber {
+class LocalWhisperTranscriber {
   constructor() {
     this.name = 'Whisper (Local)';
     this.language = 'lv';
@@ -75,3 +75,5 @@ export class LocalWhisperTranscriber {
     }
   }
 }
+
+module.exports = { WhisperTranscriber, LocalWhisperTranscriber };

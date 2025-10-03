@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const FormidableLib = require('formidable');
-const { kv } = require('@vercel/kv');
 
 // Import transcription services
 const { SpeechmaticsTranscriber } = require('../transcribers/speechmatics.js');
@@ -104,6 +103,14 @@ module.exports = async function handler(req, res) {
 
     console.log('Looking for audio file at:', audioPath);
     
+    // Log API key availability for debugging
+    console.log('API Key availability:', {
+      SPEECHMATICS_API_KEY: !!process.env.SPEECHMATICS_API_KEY,
+      OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+      GOOGLE_CLOUD_API_KEY: !!process.env.GOOGLE_CLOUD_API_KEY,
+      ASSEMBLYAI_API_KEY: !!process.env.ASSEMBLYAI_API_KEY
+    });
+    
     if (!fs.existsSync(audioPath)) {
       console.error('Audio file not found at:', audioPath);
       // List files in directory for debugging
@@ -202,6 +209,12 @@ module.exports = async function handler(req, res) {
 
       } catch (error) {
         console.error(`Transcription failed for ${modelId}:`, error);
+        console.error(`Error details:`, {
+          message: error.message,
+          stack: error.stack,
+          modelId,
+          filename
+        });
         
         const processingTime = (Date.now() - startTime) / 1000;
         
