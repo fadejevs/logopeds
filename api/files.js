@@ -43,8 +43,10 @@ module.exports = async function handler(req, res) {
     res.status(200).json({ files });
 
   } catch (error) {
-    console.warn('List files fallback (graceful):', error.message);
-    // Graceful: return empty list instead of 500 to avoid breaking the UI
-    res.status(200).json({ files: [] });
+    console.error('Error listing files:', error);
+    res.status(500).json({ 
+      error: 'Failed to list files',
+      message: error.message 
+    });
   }
 }

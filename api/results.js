@@ -10,7 +10,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const { filename } = req.query || {};
-    if (!filename) return res.status(200).json({ filename: '', results: [] });
+    if (!filename) return res.status(400).json({ error: 'Missing filename' });
 
     // Try KV first
     try {
@@ -20,11 +20,10 @@ module.exports = async function handler(req, res) {
       }
     } catch (_) {}
 
-    // Graceful: empty results
-    return res.status(200).json({ filename, results: [] });
+    return res.status(404).json({ error: 'No results found' });
   } catch (e) {
-    console.warn('results error (graceful)', e.message);
-    return res.status(200).json({ filename: '', results: [] });
+    console.error('results error', e);
+    return res.status(500).json({ error: 'Failed to get results', message: e.message });
   }
 };
 
