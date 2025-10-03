@@ -203,6 +203,7 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
   const loadFileResults = async (filename: string) => {
     setLoading(true);
     try {
+      // 1) Try server
       const response = await apiService.getResults(filename);
       setFileResults(response);
       
@@ -211,10 +212,27 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
         addFileWithResults(filename);
       }
     } catch (error) {
+      // 2) Fallback to browser history (live demo path)
+      try {
+        const historyRaw = localStorage.getItem('transcriptionHistory');
+        const history = historyRaw ? JSON.parse(historyRaw) : [];
+        const entry = (history || []).find((h: any) => h.filename === filename);
+        if (entry && entry.results && entry.results.length) {
+          const mapped = entry.results.map((r: any) => ({
+            model_id: r.model_id,
+            transcript: r.transcript || '',
+            file_path: '',
+          }));
+          setFileResults({ filename, results: mapped });
+          addFileWithResults(filename);
+          onShowSnackbar('Loaded results from this browser session', 'info');
+          return;
+        }
+      } catch {}
+
       console.error('Failed to load results:', error);
       onShowSnackbar('No results found for this file', 'warning');
       setFileResults(null);
-      // Remove from files with results if no results found
       removeFileWithResults(filename);
     } finally {
       setLoading(false);
