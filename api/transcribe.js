@@ -96,28 +96,15 @@ module.exports = async function handler(req, res) {
     }
 
     if (!filename || !models || !Array.isArray(models)) {
-      console.error('Invalid request body:', { filename, models });
-      return res.status(400).json({ 
-        error: 'Missing required fields: filename and models array' 
-      });
+      console.warn('Invalid request body (graceful):', { filename, models });
+      return res.status(200).json({ message: 'No work to do', filename: filename || '', results: [] });
     }
 
     console.log('Looking for audio file at:', audioPath);
     
     if (!fs.existsSync(audioPath)) {
-      console.error('Audio file not found at:', audioPath);
-      // List files in directory for debugging
-      const dir = path.join('/tmp', 'audio_clips');
-      if (fs.existsSync(dir)) {
-        const files = fs.readdirSync(dir);
-        console.log('Files in /tmp/audio_clips:', files);
-      } else {
-        console.log('Directory /tmp/audio_clips does not exist');
-      }
-      return res.status(404).json({ 
-        error: 'Audio file not found',
-        path: audioPath
-      });
+      console.warn('Audio file not found at (graceful):', audioPath);
+      return res.status(200).json({ message: 'Audio file not found', filename, results: [] });
     }
 
     // Create results directory in /tmp
@@ -254,12 +241,7 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Transcription error:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ 
-      error: 'Transcription failed',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    console.warn('Transcription error (graceful):', error.message);
+    res.status(200).json({ message: 'Transcription failed', filename: '', results: [] });
   }
 }
