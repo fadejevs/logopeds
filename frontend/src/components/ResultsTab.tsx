@@ -39,7 +39,7 @@ import {
   SelectAll,
   Clear,
 } from '@mui/icons-material';
-import { apiService } from '../utils/api';
+import { apiService, TranscriptionResult } from '../utils/api';
 
 interface ResultsTabProps {
   onShowSnackbar: (message: string, severity: 'success' | 'error' | 'warning' | 'info') => void;
@@ -50,12 +50,6 @@ interface FileInfo {
   filename: string;
   size: number;
   upload_time: string;
-}
-
-interface TranscriptionResult {
-  model_id: string;
-  transcript: string;
-  file_path: string;
 }
 
 interface FileResults {
@@ -573,23 +567,24 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
                               </TableCell>
                               <TableCell>
                                 <Chip
-                                  icon={<CheckCircle />}
-                                  label="Success"
-                                  color="success"
+                                  icon={result.status === 'success' ? <CheckCircle /> : <ErrorIcon />}
+                                  label={result.status === 'success' ? 'Success' : 'Error'}
+                                  color={result.status === 'success' ? 'success' : 'error'}
                                   size="small"
                                 />
                               </TableCell>
                               <TableCell>
                                 <Typography variant="body2" noWrap sx={{ maxWidth: 300 }}>
-                                  {result.transcript.substring(0, 100)}
-                                  {result.transcript.length > 100 ? '...' : ''}
+                                  {result.transcript ? result.transcript.substring(0, 100) : 'No transcript available'}
+                                  {result.transcript && result.transcript.length > 100 ? '...' : ''}
                                 </Typography>
                               </TableCell>
                               <TableCell align="center">
                                 <Tooltip title="View full transcript">
                                   <IconButton
                                     size="small"
-                                    onClick={() => handleViewTranscript(result.model_id, result.transcript)}
+                                    onClick={() => handleViewTranscript(result.model_id, result.transcript || '')}
+                                    disabled={!result.transcript}
                                   >
                                     <Visibility />
                                   </IconButton>
@@ -597,7 +592,8 @@ const ResultsTab: React.FC<ResultsTabProps> = ({ onShowSnackbar, onTranscription
                                 <Tooltip title="Copy transcript">
                                   <IconButton
                                     size="small"
-                                    onClick={() => handleCopyTranscript(result.transcript)}
+                                    onClick={() => handleCopyTranscript(result.transcript || '')}
+                                    disabled={!result.transcript}
                                   >
                                     <ContentCopy />
                                   </IconButton>
