@@ -215,9 +215,16 @@ module.exports = async function handler(req, res) {
         // Save transcript to file with parameter details
         const transcriptFile = path.join(resultsDir, `${filename}_${modelId}.txt`);
         const header = `# Transcription by ${modelId.toUpperCase()}\n# Parameters: ${getModelParameters(modelId)}\n# Generated: ${new Date().toISOString()}\n\n`;
-        fs.writeFileSync(transcriptFile, header + transcript, 'utf-8');
-        console.log(`Saved transcript file: ${transcriptFile}`);
-        console.log(`File exists: ${fs.existsSync(transcriptFile)}`);
+        
+        try {
+          fs.writeFileSync(transcriptFile, header + transcript, 'utf-8');
+          console.log(`Saved transcript file: ${transcriptFile}`);
+          console.log(`File exists: ${fs.existsSync(transcriptFile)}`);
+          console.log(`File size: ${fs.statSync(transcriptFile).size} bytes`);
+        } catch (writeError) {
+          console.error(`Failed to write transcript file: ${writeError.message}`);
+          throw writeError;
+        }
 
         results.push({
           model_id: modelId,
@@ -275,6 +282,16 @@ module.exports = async function handler(req, res) {
 
     // Results are already saved as individual files in /tmp/transcriptions
     console.log('Transcription completed for:', filename, 'with', results.length, 'results');
+    
+    // List all files in results directory for verification
+    try {
+      const allFiles = fs.readdirSync(resultsDir);
+      console.log('All files in results directory:', allFiles);
+      const transcriptFiles = allFiles.filter(f => f.includes(filename));
+      console.log('Transcript files for this audio:', transcriptFiles);
+    } catch (e) {
+      console.error('Failed to list results directory:', e);
+    }
 
     res.status(200).json({
       message: 'Transcription completed',
