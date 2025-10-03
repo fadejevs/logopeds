@@ -9,7 +9,11 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { filename } = req.query || {};
+    // Extract filename from URL path (e.g., /api/results/filename.m4a)
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const pathParts = url.pathname.split('/');
+    const filename = pathParts[pathParts.length - 1];
+    
     if (!filename) return res.status(400).json({ error: 'Missing filename' });
 
     // Try KV first
