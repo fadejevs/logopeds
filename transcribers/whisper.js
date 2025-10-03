@@ -1,6 +1,6 @@
+const https = require('https');
 const fs = require('fs');
-const FormData = require('form-data');
-const fetch = require('node-fetch');
+const path = require('path');
 
 class WhisperTranscriber {
   constructor() {
@@ -10,70 +10,97 @@ class WhisperTranscriber {
     if (!process.env.OPENAI_API_KEY) {
       throw new Error('OpenAI API key not configured');
     }
+    this.apiKey = process.env.OPENAI_API_KEY;
   }
 
   async transcribe(audioFilePath) {
     try {
       // Read the audio file
       const audioBuffer = fs.readFileSync(audioFilePath);
+      const filename = path.basename(audioFilePath);
       
-      // Create form data for OpenAI Whisper API
-      const formData = new FormData();
-      formData.append('file', audioBuffer, {
-        filename: 'audio.wav',
-        contentType: 'audio/wav'
-      });
-      formData.append('model', 'whisper-1');
-      formData.append('language', 'lv'); // Latvian
-      formData.append('response_format', 'text');
+      // Create multipart form data manually
+      const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+      const formData = this.buildFormData(audioBuffer, filename, boundary);
       
-      // Call OpenAI Whisper API
-      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          ...formData.getHeaders(),
-        },
-        body: formData,
+      return new Promise((resolve, reject) => {
+        const options = {
+          method: 'POST',
+          hostname: 'api.openai.com',
+          path: '/v1/audio/transcriptions',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            'Content-Length': Buffer.byteLength(formData)
+          }
+        };
+
+        const req = https.request(options, (res) => {
+          let data = '';
+
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+
+          res.on('end', () => {
+            if (res.statusCode === 200) {
+              resolve(data.trim());
+            } else {
+              try {
+                const errorData = JSON.parse(data);
+                reject(new Error(`OpenAI API error: ${res.statusCode} - ${errorData.error?.message || data}`));
+              } catch (e) {
+                reject(new Error(`OpenAI API error: ${res.statusCode} - ${data}`));
+              }
+            }
+          });
+        });
+
+        req.on('error', (error) => {
+          reject(new Error(`Whisper transcription request failed: ${error.message}`));
+        });
+
+        req.write(formData);
+        req.end();
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorData.error?.message || 'Unknown error'}`);
-      }
-
-      const transcript = await response.text();
-      return transcript.trim();
       
     } catch (error) {
       throw new Error(`Whisper transcription failed: ${error.message}`);
     }
   }
+
+  buildFormData(audioBuffer, filename, boundary) {
+    const parts = [];
+    
+    // Add file field
+    parts.push(`--${boundary}\r\n`);
+    parts.push(`Content-Disposition: form-data; name="file"; filename="${filename}"\r\n`);
+    parts.push(`Content-Type: application/octet-stream\r\n\r\n`);
+    
+    // Add model field
+    parts.push(`\r\n--${boundary}\r\n`);
+    parts.push(`Content-Disposition: form-data; name="model"\r\n\r\n`);
+    parts.push(`whisper-1\r\n`);
+    
+    // Add language field
+    parts.push(`--${boundary}\r\n`);
+    parts.push(`Content-Disposition: form-data; name="language"\r\n\r\n`);
+    parts.push(`lv\r\n`);
+    
+    // Add response_format field
+    parts.push(`--${boundary}\r\n`);
+    parts.push(`Content-Disposition: form-data; name="response_format"\r\n\r\n`);
+    parts.push(`text\r\n`);
+    
+    // End boundary
+    parts.push(`--${boundary}--\r\n`);
+    
+    // Combine text parts
+    const header = Buffer.from(parts.slice(0, 3).join(''), 'utf8');
+    const footer = Buffer.from(parts.slice(3).join(''), 'utf8');
+    
+    return Buffer.concat([header, audioBuffer, footer]);
+  }
 }
 
-// Alternative local implementation (for development)
-class LocalWhisperTranscriber {
-  constructor() {
-    this.name = 'Whisper (Local)';
-    this.language = 'lv';
-  }
-
-  async transcribe(audioFilePath) {
-    try {
-      // This would use the local whisper binary
-      // For Vercel deployment, this won't work, so we use the API version above
-      
-      console.log('Local Whisper transcription requested for:', audioFilePath);
-      
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      return 'Local Whisper not available in serverless environment. Please use OpenAI Whisper API.';
-      
-    } catch (error) {
-      throw new Error(`Local Whisper transcription failed: ${error.message}`);
-    }
-  }
-}
-
-module.exports = { WhisperTranscriber, LocalWhisperTranscriber };
+module.exports = { WhisperTranscriber };

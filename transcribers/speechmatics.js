@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
@@ -27,7 +27,8 @@ class SpeechmaticsTranscriber {
   }
 
   async uploadFile(audioFilePath) {
-    const uploadUrl = `${this.baseUrl}/jobs`;
+    const audioBuffer = fs.readFileSync(audioFilePath);
+    const filename = path.basename(audioFilePath);
     
     // Detect mime type
     const ext = path.extname(audioFilePath).toLowerCase();
@@ -46,70 +47,180 @@ class SpeechmaticsTranscriber {
       }
     };
 
-    const formData = new FormData();
-    formData.append('data_file', new Blob([fs.readFileSync(audioFilePath)], { type: mimeType }), path.basename(audioFilePath));
-    formData.append('config', JSON.stringify(jobConfig));
+    // Create multipart form data manually
+    const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+    const formData = this.buildFormData(audioBuffer, filename, mimeType, jobConfig, boundary);
 
-    const response = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`
-      },
-      body: formData
+    return new Promise((resolve, reject) => {
+      const options = {
+        method: 'POST',
+        hostname: 'asr.api.speechmatics.com',
+        path: '/v2/jobs',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': `multipart/form-data; boundary=${boundary}`,
+          'Content-Length': Buffer.byteLength(formData)
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          if (res.statusCode === 200 || res.statusCode === 201) {
+            try {
+              const result = JSON.parse(data);
+              resolve(result.id);
+            } catch (e) {
+              reject(new Error(`Failed to parse response: ${data}`));
+            }
+          } else {
+            reject(new Error(`Upload failed: ${res.statusCode} ${res.statusText} - ${data}`));
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        reject(new Error(`Upload request failed: ${error.message}`));
+      });
+
+      req.write(formData);
+      req.end();
     });
+  }
 
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.id;
+  buildFormData(audioBuffer, filename, mimeType, config, boundary) {
+    const parts = [];
+    
+    // Add data_file field
+    parts.push(`--${boundary}\r\n`);
+    parts.push(`Content-Disposition: form-data; name="data_file"; filename="${filename}"\r\n`);
+    parts.push(`Content-Type: ${mimeType}\r\n\r\n`);
+    
+    // Add config field
+    const configStr = JSON.stringify(config);
+    parts.push(`\r\n--${boundary}\r\n`);
+    parts.push(`Content-Disposition: form-data; name="config"\r\n\r\n`);
+    parts.push(`${configStr}\r\n`);
+    
+    // End boundary
+    parts.push(`--${boundary}--\r\n`);
+    
+    // Combine parts
+    const header = Buffer.from(parts.slice(0, 3).join(''), 'utf8');
+    const footer = Buffer.from(parts.slice(3).join(''), 'utf8');
+    
+    return Buffer.concat([header, audioBuffer, footer]);
   }
 
   async waitForCompletion(jobId, timeout = 300000) {
-    const statusUrl = `${this.baseUrl}/jobs/${jobId}`;
-    const resultUrl = `${this.baseUrl}/jobs/${jobId}/transcript?format=txt`;
-    
     const startTime = Date.now();
     
     while (Date.now() - startTime < timeout) {
-      const statusResponse = await fetch(statusUrl, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-      
-      if (!statusResponse.ok) {
-        throw new Error(`Status check failed: ${statusResponse.status}`);
-      }
-      
-      const statusData = await statusResponse.json();
-      const jobStatus = statusData.job?.status;
-      
-      if (jobStatus === 'done') {
-        const resultResponse = await fetch(resultUrl, {
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`
-          }
-        });
+      try {
+        // Check job status
+        const statusData = await this.checkStatus(jobId);
+        const jobStatus = statusData.job?.status;
         
-        if (!resultResponse.ok) {
-          throw new Error(`Result fetch failed: ${resultResponse.status}`);
+        if (jobStatus === 'done') {
+          // Get transcript
+          const transcript = await this.getTranscript(jobId);
+          return { transcript: transcript.trim() };
         }
         
-        const transcript = await resultResponse.text();
-        return { transcript: transcript.trim() };
+        if (jobStatus === 'rejected') {
+          throw new Error(`Job rejected: ${JSON.stringify(statusData)}`);
+        }
+        
+        // Wait 2 seconds before checking again
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (error) {
+        if (Date.now() - startTime >= timeout) {
+          throw new Error(`Transcription timeout after ${timeout}ms`);
+        }
+        throw error;
       }
-      
-      if (jobStatus === 'rejected') {
-        throw new Error(`Job rejected: ${JSON.stringify(statusData)}`);
-      }
-      
-      // Wait 2 seconds before checking again
-      await new Promise(resolve => setTimeout(resolve, 2000));
     }
     
     throw new Error(`Transcription timeout after ${timeout}ms`);
+  }
+
+  async checkStatus(jobId) {
+    return new Promise((resolve, reject) => {
+      const options = {
+        method: 'GET',
+        hostname: 'asr.api.speechmatics.com',
+        path: `/v2/jobs/${jobId}`,
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            try {
+              resolve(JSON.parse(data));
+            } catch (e) {
+              reject(new Error(`Failed to parse status response: ${data}`));
+            }
+          } else {
+            reject(new Error(`Status check failed: ${res.statusCode} - ${data}`));
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        reject(new Error(`Status check request failed: ${error.message}`));
+      });
+
+      req.end();
+    });
+  }
+
+  async getTranscript(jobId) {
+    return new Promise((resolve, reject) => {
+      const options = {
+        method: 'GET',
+        hostname: 'asr.api.speechmatics.com',
+        path: `/v2/jobs/${jobId}/transcript?format=txt`,
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            resolve(data);
+          } else {
+            reject(new Error(`Result fetch failed: ${res.statusCode} - ${data}`));
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        reject(new Error(`Transcript fetch request failed: ${error.message}`));
+      });
+
+      req.end();
+    });
   }
 }
 
